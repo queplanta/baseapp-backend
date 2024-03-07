@@ -34,9 +34,10 @@ class FileNode(DjangoObjectType):
         interfaces = (relay.Node,)
         model = File
         filterset_class = FileFilter
+        name = "FileObjectType"
     
     def resolve_file(self, info, **kwargs):
-        return self.file.url
+        return info.context.build_absolute_uri(self.file.url)
     
     # @classmethod
     # def get_node(cls, info, id):
