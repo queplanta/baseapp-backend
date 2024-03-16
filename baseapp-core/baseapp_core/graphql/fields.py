@@ -1,4 +1,5 @@
 import graphene
+from django.apps import apps
 from django.conf import settings
 from django.core.cache import InvalidCacheBackendError, caches
 from easy_thumbnails.files import get_thumbnailer
@@ -9,14 +10,20 @@ except InvalidCacheBackendError:
     cache = None
 
 
-class File(graphene.ObjectType):
-    url = graphene.String(required=True)
-    # contentType = graphene.String()
-    # bytes = graphene.Int()
+if apps.is_installed("baseapp_files"):
+    from baseapp_files.graphql.object_types import FileObjectType
+else:
+    class FileObjectType(graphene.ObjectType):
+        url = graphene.String()
+        # contentType = graphene.String()
+        # bytes = graphene.Int()
+
+        class Meta:
+            name = "File"
 
 
 class ThumbnailField(graphene.Field):
-    def __init__(self, type=File, **kwargs):
+    def __init__(self, type=FileObjectType, **kwargs):
         kwargs.update(
             {
                 "args": {
@@ -40,7 +47,7 @@ class ThumbnailField(graphene.Field):
                 cache_key = self._get_cache_key(instance, width, height)
                 value_from_cache = cache.get(cache_key)
                 if value_from_cache:
-                    return File(url=value_from_cache)
+                    return FileObjectType(url=value_from_cache)
 
             thumbnailer = get_thumbnailer(instance)
             url = thumbnailer.get_thumbnail({"size": (width, height)}).url
@@ -49,7 +56,7 @@ class ThumbnailField(graphene.Field):
             if cache:
                 cache.set(cache_key, absolute_url, timeout=None)
 
-            return File(url=absolute_url)
+            return FileObjectType(url=absolute_url)
 
         return built_thumbnail
 

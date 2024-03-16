@@ -5,7 +5,7 @@ from graphene_django.views import GraphQLView as GrapheneGraphQLView
 from graphene_django.views import HttpError
 from graphql import get_operation_ast, parse
 from graphql.execution import ExecutionResult
-from graphene_file_upload.utils import place_files_in_operations
+# from graphene_file_upload.utils import place_files_in_operations
 
 try:
     import sentry_sdk
