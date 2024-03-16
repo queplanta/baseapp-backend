@@ -29,9 +29,10 @@ class File(TimeStampedModel):
     parent_content_type = models.ForeignKey(
         ContentType,
         null=True,
+        blank=True,
         on_delete=models.CASCADE,
     )
-    parent_object_id = models.PositiveIntegerField(null=True)
+    parent_object_id = models.PositiveIntegerField(null=True, blank=True)
     parent = GenericForeignKey("parent_content_type", "parent_object_id")
 
     content_type = models.CharField(max_length=150, null=True, blank=True)
