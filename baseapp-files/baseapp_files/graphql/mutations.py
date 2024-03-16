@@ -4,14 +4,14 @@ from graphene_django.debug import DjangoDebug
 from graphene_django_cud.mutations import DjangoCreateMutation, DjangoDeleteMutation, DjangoPatchMutation
 from baseapp_core.graphql.errors import Errors
 
-from .object_types import FileNode
+from .object_types import FileObjectType
 
 
 class FileCreateMutation(DjangoCreateMutation):
     errors = Errors()
     debug = Field(DjangoDebug, name="_debug")
-    file = Field(FileNode._meta.connection.Edge)
-    # files = Field("files.object_types.FileNode", required=False)
+    file = Field(FileObjectType._meta.connection.Edge)
+    # files = Field("files.object_types.FileObjectType", required=False)
 
     class Meta:
         model = File

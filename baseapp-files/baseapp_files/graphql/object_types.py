@@ -25,18 +25,17 @@ class FileFilter(django_filters.FilterSet):
         # }
 
 
-class FileNode(DjangoObjectType):
+class FileObjectType(DjangoObjectType):
     parent = graphene.Field(relay.Node)
-    file = graphene.String()
-    # file_type = graphene.Field(FileTypeEnum)
+    url = graphene.String()
+    # content_type_type = graphene.Field(FileTypeEnum)
 
     class Meta:
         interfaces = (relay.Node,)
         model = File
         filterset_class = FileFilter
-        name = "FileObjectType"
     
-    def resolve_file(self, info, **kwargs):
+    def resolve_url(self, info, **kwargs):
         return info.context.build_absolute_uri(self.file.url)
     
     # @classmethod
@@ -53,7 +52,7 @@ class FileNode(DjangoObjectType):
 
 class FilesNode(relay.Node):
     files_count = GenericScalar()
-    files = DjangoFilterConnectionField(lambda: FileNode)
+    files = DjangoFilterConnectionField(lambda: FileObjectType)
 
     def resolve_files(self, info, **kwargs):
         parent_content_type = ContentType.objects.get_for_model(self)
