@@ -9,21 +9,18 @@ try:
 except InvalidCacheBackendError:
     cache = None
 
+# class FileObjectType(graphene.ObjectType):
+#     url = graphene.String()
+#     # contentType = graphene.String()
+#     # bytes = graphene.Int()
 
-if apps.is_installed("baseapp_files"):
-    from baseapp_files.graphql.object_types import FileObjectType
-else:
-    class FileObjectType(graphene.ObjectType):
-        url = graphene.String()
-        # contentType = graphene.String()
-        # bytes = graphene.Int()
-
-        class Meta:
-            name = "File"
+#     class Meta:
+#         name = "File"
 
 
 class ThumbnailField(graphene.Field):
-    def __init__(self, type=FileObjectType, **kwargs):
+    def __init__(self, type=None, **kwargs):
+        from baseapp_files.graphql.object_types import FileObjectType
         kwargs.update(
             {
                 "args": {
@@ -32,9 +29,10 @@ class ThumbnailField(graphene.Field):
                 }
             }
         )
-        return super(ThumbnailField, self).__init__(type, **kwargs)
+        return super(ThumbnailField, self).__init__(FileObjectType, **kwargs)
 
     def get_resolver(self, parent_resolver):
+        from baseapp_files.graphql.object_types import FileObjectType
         resolver = self.resolver or parent_resolver
 
         def built_thumbnail(instance, info, width, height, **kwargs):
