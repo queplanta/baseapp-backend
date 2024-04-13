@@ -2,7 +2,6 @@ import django_filters
 import graphene
 import swapper
 from baseapp_auth.graphql import PermissionsInterface
-from baseapp_comments.graphql.object_types import CommentsInterface
 from baseapp_core.graphql import DjangoObjectType, LanguagesEnum, ThumbnailField
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -82,7 +81,11 @@ class PageObjectType(DjangoObjectType):
     body = graphene.String()
 
     class Meta:
-        interfaces = (relay.Node, PageInterface, PermissionsInterface, CommentsInterface)
+        interfaces = (
+            relay.Node,
+            PageInterface,
+            PermissionsInterface,
+        )
         model = Page
         fields = ("pk", "user", "title", "body", "status", "created", "modified")
         filterset_class = PageFilter

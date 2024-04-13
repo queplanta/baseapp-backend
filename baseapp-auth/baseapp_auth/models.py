@@ -63,6 +63,7 @@ class AbstractUser(PermissionsMixin, AbstractBaseUser, use_relay_model()):
         abstract = True
         verbose_name = _("user")
         verbose_name_plural = _("users")
+        ordering = ['id']
         permissions = [
             ("view_all_users", _("can view all users")),
             ("view_user_email", _("can view user's email field")),

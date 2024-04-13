@@ -55,6 +55,11 @@ class File(TimeStampedModel):
         null=True,
     )
 
+    class Meta:
+        verbose_name = _("File")
+        verbose_name_plural = _("Files")
+        ordering = ["id"]
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 

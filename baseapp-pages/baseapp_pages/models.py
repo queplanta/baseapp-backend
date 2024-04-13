@@ -1,6 +1,5 @@
 import pghistory
 import swapper
-from baseapp_comments.models import CommentableModel
 from baseapp_core.graphql.models import RelayModel
 from baseapp_core.models import random_name_in
 from django.conf import settings
@@ -91,7 +90,11 @@ class PageMixin(models.Model):
         abstract = True
 
 
-class AbstractPage(PageMixin, TimeStampedModel, RelayModel, CommentableModel):
+class AbstractPage(
+    PageMixin,
+    TimeStampedModel,
+    RelayModel,
+):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name="pages",
@@ -136,4 +139,5 @@ def conditional_decorator(dec, condition):
 @pghistory.track(pghistory.Snapshot())
 class Page(AbstractPage):
     class Meta:
+        ordering = ["id"]
         swappable = swapper.swappable_setting("baseapp_pages", "Page")
