@@ -24,7 +24,7 @@ class FilesModel(models.Model):
         abstract = True
 
 
-@pghistory.track(pghistory.Snapshot())
+@pghistory.track()
 class File(TimeStampedModel):
     parent_content_type = models.ForeignKey(
         ContentType,
@@ -38,9 +38,7 @@ class File(TimeStampedModel):
     content_type = models.CharField(max_length=150, null=True, blank=True)
     file_name = models.CharField(max_length=512, null=True, blank=True)
     file_size = models.PositiveIntegerField(null=True, help_text=_("File size in bytes"))
-    file = models.FileField(
-        max_length=512, upload_to=set_upload_to_random_filename("files")
-    )
+    file = models.FileField(max_length=512, upload_to=set_upload_to_random_filename("files"))
 
     name = models.CharField(max_length=512, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
