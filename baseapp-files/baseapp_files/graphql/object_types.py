@@ -8,28 +8,36 @@ from django.contrib.contenttypes.models import ContentType
 
 from ..models import File
 
+# FileTypeEnum = graphene.Enum.from_enum(FileType)
+
 
 class FileFilter(django_filters.FilterSet):
-    no_parent = django_filters.BooleanFilter(field_name='parent_object_id', lookup_expr='isnull')
+    no_parent = django_filters.BooleanFilter(field_name="parent_object_id", lookup_expr="isnull")
 
     class Meta:
         model = File
-        fields = ['no_parent']
+        fields = ["no_parent"]
+        # fields = {
+        #     "id": ["exact"],
+        #     "file_type": ["exact"],
+        #     "file": ["exact"],
+        #     "file__icontains": ["exact"],
+        # }
 
 
 class FileObjectType(DjangoObjectType):
     parent = graphene.Field(relay.Node)
     url = graphene.String()
+    # content_type_type = graphene.Field(FileTypeEnum)
 
     class Meta:
         interfaces = (relay.Node,)
         model = File
         filterset_class = FileFilter
-    
+
     def resolve_url(self, info, **kwargs):
-        # return self.file.url
         return info.context.build_absolute_uri(self.file.url)
-    
+
     # @classmethod
     # def get_node(cls, info, id):
     #     if not info.context.user.is_authenticated:

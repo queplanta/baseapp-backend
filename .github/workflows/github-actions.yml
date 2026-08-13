@@ -1,66 +1,83 @@
-name: GitHub Actions
+name: Lint & Tests & SonarCloud
 run-name: ${{ github.actor }} is checking ${{ github.ref }} branch 🚀
 on: [push, workflow_dispatch]
+permissions:
+  contents: read
+  pull-requests: write
 jobs:
-  baseapp-auth-baseapp_auth:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-auth
-      custom_pytest: "pytest --ds=testproject.settings_referrals -m referrals baseapp-auth/baseapp_auth/tests"
-  baseapp-auth-baseapp_referrals:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-auth
-      app_name: baseapp_referrals
-  baseapp-cloudflare-stream-field:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-cloudflare-stream-field
-  baseapp-core:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-core
-  baseapp-drf-view-action-permissions:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-drf-view-action-permissions
-  baseapp-message-templates:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-message-templates
-  baseapp-payments:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-payments
-#  baseapp-reactions:
-#    uses: ./.github/workflows/project-workflow.yml
-#    with:
-#      project: baseapp-reactions
-  baseapp-social-auth:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-social-auth
-  baseapp-e2e:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-e2e
-  baseapp-notifications:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-notifications
-  baseapp-url-shortening:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-url-shortening
-  baseapp-follows:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-follows
-  baseapp-pages:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-pages
-  baseapp-comments:
-    uses: ./.github/workflows/project-workflow.yml
-    with:
-      project: baseapp-comments
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+        django-version: ["4.2.15", "5.2.1"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # for sonarcloud
+
+      - name: docker compose build
+        run: docker compose build --build-arg "PYTHON_VERSION=${{ matrix.python-version }}"
+
+      - name: docker compose up
+        run: docker compose up -d --wait
+
+      - name: flake8
+        id: flake8
+        run: docker compose exec backend flake8 ./ --show-source --statistics --count
+
+      - name: isort
+        id: isort
+        if: steps.flake8.outcome == 'success'
+        run: docker compose exec backend isort --check ./
+
+      - name: black
+        id: black
+        if: steps.isort.outcome == 'success'
+        run: docker compose exec backend black --check ./
+
+      - name: Install tests requirements with Django ${{ matrix.django-version }}
+        if: steps.black.outcome == 'success'
+        id: requirements_installation
+        run: |
+          docker compose exec backend pip install "Django~=${{ matrix.django-version }}"
+
+      - name: pytest
+        if: steps.requirements_installation.outcome == 'success'
+        run: |
+          docker compose exec backend pytest --cov=./ --cov-report=xml --cov-branch .
+      
+      - name: pytest drf_view_action_permissions
+        if: steps.requirements_installation.outcome == 'success'
+        run: |
+          docker compose exec backend pytest --cov=./ --cov-report=xml --cov-branch --cov-append baseapp_drf_view_action_permissions --ds=baseapp_drf_view_action_permissions.tests.settings
+      
+      - name: upload coverage report
+        if: matrix.python-version == '3.12' && matrix.django-version == '5.2.1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+      - name: docker compose down
+        run: docker compose down --volumes --remove-orphans
+
+  sonarcloud:
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+        continue-on-error: true
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

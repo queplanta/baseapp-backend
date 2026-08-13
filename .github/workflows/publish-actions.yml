@@ -1,77 +1,36 @@
-name: Publish Actions
+name: Publish to PyPI
 run-name: ${{ github.actor }} is checking ${{ github.ref }} branch 🚀
 on:
   release:
     types: [published]
-
+permissions:
+  contents: read
+  pull-requests: write
 jobs:
-  baseapp-auth:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-auth
-    secrets: inherit
-  baseapp-cloudflare-stream-field:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-cloudflare-stream-field
-    secrets: inherit
-  baseapp-core:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-core
-    secrets: inherit
-  baseapp-drf-view-action-permissions:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-drf-view-action-permissions
-    secrets: inherit
-  baseapp-message-templates:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-message-templates
-    secrets: inherit
-  baseapp-payments:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-payments
-    secrets: inherit
-  baseapp-reactions:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-reactions
-    secrets: inherit
-  baseapp-social-auth:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-social-auth
-    secrets: inherit
-  baseapp-e2e:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-e2e
-    secrets: inherit
-  baseapp-notifications:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-notifications
-    secrets: inherit
-  baseapp-url-shortening:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-url-shortening
-    secrets: inherit
-  baseapp-follows:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-follows
-    secrets: inherit
-  baseapp-pages:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-pages
-    secrets: inherit
-  baseapp-comments:
-    uses: ./.github/workflows/publish-workflow.yml
-    with:
-      project: baseapp-comments
-    secrets: inherit
+  publish:
+    runs-on: ubuntu-latest
+    environment: production
+    if: contains(github.event.release.tag_name, inputs.project)
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build distribution
+        working-directory: .
+        run: python3 setup.py sdist
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.13.0
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: ./dist/
