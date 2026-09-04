@@ -31,6 +31,21 @@ class Node(GrapheneRelayNode):
                 f'ObjectType "{graphene_type._meta.name}" does not implement the "{GrapheneRelayNode}" interface.'
             )
 
-        get_node = getattr(graphene_type, "get_node", None)
+        # Ignore Graphene's inherited unrestricted get_node implementation.
+        # A type must explicitly define its own method to bypass queryset policy.
+        get_node = graphene_type.__dict__.get("get_node")
         if get_node:
             return get_node(info, _id)
+
+        # DjangoObjectTypes may expose an authorization-aware queryset without
+        # implementing a custom get_node method. This keeps Relay node lookup
+        # subject to the same policy as connection fields.
+        model = getattr(graphene_type._meta, "model", None)
+        if model is None:
+            return None
+
+        queryset = model.objects.filter(pk=_id)
+        get_queryset = getattr(graphene_type, "get_queryset", None)
+        if get_queryset:
+            queryset = get_queryset(queryset, info)
+        return queryset.first()
