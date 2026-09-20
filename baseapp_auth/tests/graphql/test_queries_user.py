@@ -68,6 +68,17 @@ QUERY_USERS_LIST = """
     }
 """
 
+QUERY_USER_PROFILE_FIELDS = """
+    query GetUserProfileFields($id: ID!) {
+        user(id: $id) {
+            fullName
+            avatar(width: 64, height: 64) {
+                url
+            }
+        }
+    }
+"""
+
 
 def test_anon_can_query_user_by_pk(graphql_client):
     user = UserFactory()
@@ -153,3 +164,33 @@ def test_anon_can_query_users_list_with_optimized_query(graphql_client_with_quer
     # SELECT "users_user"."id", "users_user"."profile_id", "users_user"."first_name", "users_user"."last_name", ("users_user"."password_changed_date" + (730 days, 0:00:00)::interval) AS "password_expiry_date", (("users_user"."password_changed_date" + (730 days, 0:00:00)::interval) AT TIME ZONE UTC)::date <= 2025-02-28 AS "is_password_expired", "profiles_profile"."id", "profiles_profile"."name" FROM "users_user" LEFT OUTER JOIN "profiles_profile" ON ("users_user"."profile_id" = "profiles_profile"."id") WHERE "users_user"."is_active"
     # SELECT COUNT(*) AS "__count" FROM "users_user" WHERE "users_user"."is_active"
     # SELECT "users_user"."id", "users_user"."profile_id", "users_user"."first_name", "users_user"."last_name", ("users_user"."password_changed_date" + (730 days, 0:00:00)::interval) AS "password_expiry_date", (("users_user"."password_changed_date" + (730 days, 0:00:00)::interval) AT TIME ZONE UTC)::date <= 2025-02-28 AS "is_password_expired", "profiles_profile"."id", "profiles_profile"."name" FROM "users_user" LEFT OUTER JOIN "profiles_profile" ON ("users_user"."profile_id" = "profiles_profile"."id") WHERE "users_user"."is_active" LIMIT 10
+
+
+def test_user_profile_fields_resolve_with_and_without_profile(graphql_client):
+    user_with_profile = UserFactory(first_name="John", last_name="Profile")
+    user_with_profile.profile.name = "Profile Name"
+    user_with_profile.profile.save(update_fields=["name"])
+
+    response = graphql_client(
+        QUERY_USER_PROFILE_FIELDS,
+        variables={"id": user_with_profile.relay_id},
+    )
+    content = response.json()
+
+    assert "errors" not in content
+    assert content["data"]["user"]["fullName"] == "Profile Name"
+    assert content["data"]["user"]["avatar"] is None
+
+    user_without_profile = UserFactory(first_name="Jane", last_name="NoProfile")
+    user_without_profile.profile = None
+    user_without_profile.save(update_fields=["profile"])
+
+    response = graphql_client(
+        QUERY_USER_PROFILE_FIELDS,
+        variables={"id": user_without_profile.relay_id},
+    )
+    content = response.json()
+
+    assert "errors" not in content
+    assert content["data"]["user"]["fullName"] == "Jane NoProfile"
+    assert content["data"]["user"]["avatar"] is None

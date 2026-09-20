@@ -94,7 +94,8 @@ class AbstractUserObjectType(*inheritances, object):
         filterset_class = UsersFilter
 
     def resolve_avatar(self, *args, **kwargs):
-        return self.profile.image
+        profile = getattr(self, "profile", None)
+        return profile.image if profile else None
 
     def resolve_metadata(self, *args, **kwargs):
         return MetadataObjectType(
@@ -105,7 +106,10 @@ class AbstractUserObjectType(*inheritances, object):
         return info.context.user.is_authenticated and self.pk == info.context.user.pk
 
     def resolve_full_name(self, *args, **kwargs):
-        return self.profile.name
+        profile = getattr(self, "profile", None)
+        if profile and getattr(profile, "name", None):
+            return profile.name
+        return self.get_full_name()
 
     def resolve_email(self, info):
         return view_user_private_field(self, info, "email")
