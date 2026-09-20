@@ -12,6 +12,26 @@ from model_utils.models import TimeStampedModel
 
 from .validators import blocked_words_validator
 
+if not hasattr(pghistory, "Snapshot"):
+    class Snapshot(pghistory.Tracker):
+        label = "snapshot"
+
+        def setup(self, event_model):
+            pghistory.InsertEvent(
+                "snapshot_insert",
+                trigger_name="snapshot_insert",
+            ).setup(event_model)
+            pghistory.UpdateEvent(
+                "snapshot_update",
+                trigger_name="snapshot_update",
+            ).setup(event_model)
+            pghistory.DeleteEvent(
+                "snapshot_delete",
+                trigger_name="snapshot_delete",
+            ).setup(event_model)
+
+    pghistory.Snapshot = Snapshot
+
 SwappedComment = swapper.load_model(
     "baseapp_comments", "Comment", required=False, require_ready=False
 )

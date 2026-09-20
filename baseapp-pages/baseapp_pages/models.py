@@ -12,6 +12,26 @@ from django_quill.fields import QuillField
 from model_utils.models import TimeStampedModel
 from translated_fields import TranslatedField
 
+if not hasattr(pghistory, "Snapshot"):
+    class Snapshot(pghistory.Tracker):
+        label = "snapshot"
+
+        def setup(self, event_model):
+            pghistory.InsertEvent(
+                "snapshot_insert",
+                trigger_name="snapshot_insert",
+            ).setup(event_model)
+            pghistory.UpdateEvent(
+                "snapshot_update",
+                trigger_name="snapshot_update",
+            ).setup(event_model)
+            pghistory.DeleteEvent(
+                "snapshot_delete",
+                trigger_name="snapshot_delete",
+            ).setup(event_model)
+
+    pghistory.Snapshot = Snapshot
+
 
 class URLPath(TimeStampedModel, RelayModel):
     path = models.CharField(max_length=500, unique=True)
