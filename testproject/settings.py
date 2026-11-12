@@ -1,13 +1,13 @@
+from celery.schedules import crontab
+from django.utils.translation import gettext_lazy as _
+
+from baseapp_core.tests.settings import *  # noqa
 from baseapp_wagtail.settings import *  # noqa
 from baseapp_wagtail.settings import (
     WAGTAIL_INSTALLED_APPS,
     WAGTAIL_INSTALLED_INTERNAL_APPS,
     WAGTAIL_MIDDLEWARE,
 )
-from celery.schedules import crontab
-from django.utils.translation import gettext_lazy as _
-
-from baseapp_core.tests.settings import *  # noqa
 
 # Application definition
 INSTALLED_APPS += [
@@ -70,14 +70,10 @@ ROOT_URLCONF = "testproject.urls"
 # Auth
 AUTH_USER_MODEL = "users.User"
 
-# These test-only fixture apps have no migrations. Let Django create their
-# schema with syncdb. The auth app is synchronized with the custom user app so
-# the user's group and permission relations exist in the same syncdb pass.
-MIGRATION_MODULES = {
-    "auth": None,
-    "profiles": None,
-    "users": None,
-}
+# The reusable pages app ships an English-only migration, while this test
+# project enables three languages. Keep the additional fields in a test-only
+# migration module so the reusable app's migration stays language agnostic.
+MIGRATION_MODULES = {"baseapp_pages": "testproject.pages_migrations"}
 
 LANGUAGE_CODE = "en"
 LANGUAGES = [("en", _("English")), ("es", _("Spanish")), ("pt", _("Portuguese"))]
