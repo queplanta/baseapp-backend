@@ -43,7 +43,7 @@ jobs:
             fi
           fi
           git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' \
-            | xargs -0 -r docker compose exec backend isort --check
+            | xargs -0 -r docker compose exec backend isort --check --diff
 
       - name: black
         id: black
