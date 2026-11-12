@@ -70,10 +70,11 @@ ROOT_URLCONF = "testproject.urls"
 # Auth
 AUTH_USER_MODEL = "users.User"
 
-# The test project's custom user app has no migrations; let Django create its
-# schema with syncdb instead of treating its empty migrations package as a
-# migrated app with no initial migration.
+# These test-only fixture apps have no migrations. Let Django create their
+# schema with syncdb. The auth app is synchronized with the custom user app so
+# the user's group and permission relations exist in the same syncdb pass.
 MIGRATION_MODULES = {
+    "auth": None,
     "profiles": None,
     "users": None,
 }
