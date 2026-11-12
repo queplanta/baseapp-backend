@@ -75,12 +75,12 @@ jobs:
       - name: pytest
         if: steps.requirements_installation.outcome == 'success'
         run: |
-          docker compose exec backend pytest --cov=./ --cov-report=xml --cov-branch .
+          docker compose exec backend pytest --import-mode=importlib --cov=./ --cov-report=xml --cov-branch .
       
       - name: pytest drf_view_action_permissions
         if: steps.requirements_installation.outcome == 'success'
         run: |
-          docker compose exec backend pytest --cov=./ --cov-report=xml --cov-branch --cov-append baseapp_drf_view_action_permissions --ds=baseapp_drf_view_action_permissions.tests.settings
+          docker compose exec backend pytest --import-mode=importlib --cov=./ --cov-report=xml --cov-branch --cov-append baseapp_drf_view_action_permissions --ds=baseapp_drf_view_action_permissions.tests.settings
       
       - name: upload coverage report
         if: matrix.python-version == '3.12' && matrix.django-version == '5.2.1'
