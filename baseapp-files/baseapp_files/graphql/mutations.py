@@ -1,4 +1,4 @@
-from graphene import Field, NonNull
+from graphene import Field
 from ..models import File
 from graphene_django.debug import DjangoDebug
 from graphene_django_cud.mutations import DjangoCreateMutation, DjangoDeleteMutation, DjangoPatchMutation
