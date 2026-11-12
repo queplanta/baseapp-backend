@@ -1,6 +1,6 @@
 name: Lint & Tests & SonarCloud
 run-name: ${{ github.actor }} is checking ${{ github.ref }} branch 🚀
-on: [push, workflow_dispatch]
+on: [pull_request, workflow_dispatch]
 permissions:
   contents: read
   pull-requests: write
@@ -33,12 +33,32 @@ jobs:
       - name: isort
         id: isort
         if: steps.flake8.outcome == 'success'
-        run: docker compose exec backend isort --check ./
+        run: |
+          if [[ -n "${{ github.event.pull_request.base.sha }}" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+            if [[ -z "$base_sha" || "$base_sha" =~ ^0+$ ]]; then
+              base_sha="$(git rev-parse HEAD^)"
+            fi
+          fi
+          git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' \
+            | xargs -0 -r docker compose exec backend isort --check
 
       - name: black
         id: black
         if: steps.isort.outcome == 'success'
-        run: docker compose exec backend black --check ./
+        run: |
+          if [[ -n "${{ github.event.pull_request.base.sha }}" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+            if [[ -z "$base_sha" || "$base_sha" =~ ^0+$ ]]; then
+              base_sha="$(git rev-parse HEAD^)"
+            fi
+          fi
+          git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' \
+            | xargs -0 -r docker compose exec backend black --check
 
       - name: Install tests requirements with Django ${{ matrix.django-version }}
         if: steps.black.outcome == 'success'
