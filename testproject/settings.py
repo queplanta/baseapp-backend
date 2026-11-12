@@ -1,13 +1,13 @@
-from celery.schedules import crontab
-from django.utils.translation import gettext_lazy as _
-
-from baseapp_core.tests.settings import *  # noqa
 from baseapp_wagtail.settings import *  # noqa
 from baseapp_wagtail.settings import (
     WAGTAIL_INSTALLED_APPS,
     WAGTAIL_INSTALLED_INTERNAL_APPS,
     WAGTAIL_MIDDLEWARE,
 )
+from celery.schedules import crontab
+from django.utils.translation import gettext_lazy as _
+
+from baseapp_core.tests.settings import *  # noqa
 
 # Application definition
 INSTALLED_APPS += [
