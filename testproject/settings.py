@@ -73,7 +73,15 @@ AUTH_USER_MODEL = "users.User"
 # The test project's custom user app has no migrations; let Django create its
 # schema with syncdb instead of treating its empty migrations package as a
 # migrated app with no initial migration.
-MIGRATION_MODULES = {"users": None}
+MIGRATION_MODULES = {
+    "base": None,
+    "comments": None,
+    "e2e": None,
+    "payments": None,
+    "profiles": None,
+    "testapp": None,
+    "users": None,
+}
 
 LANGUAGE_CODE = "en"
 LANGUAGES = [("en", _("English")), ("es", _("Spanish")), ("pt", _("Portuguese"))]
