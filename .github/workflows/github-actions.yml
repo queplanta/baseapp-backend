@@ -16,6 +16,10 @@ jobs:
         with:
           fetch-depth: 0  # for sonarcloud
 
+      - name: Prepare test environment
+        run: |
+          printf 'POSTGRES_USER=postgres\nPOSTGRES_PASSWORD=postgres\nPOSTGRES_DB=baseapp\n' > .env
+
       - name: docker compose build
         run: docker compose build --build-arg "PYTHON_VERSION=${{ matrix.python-version }}"
 
