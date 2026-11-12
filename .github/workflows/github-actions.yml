@@ -18,7 +18,13 @@ jobs:
 
       - name: Prepare test environment
         run: |
-          printf 'POSTGRES_USER=postgres\nPOSTGRES_PASSWORD=postgres\nPOSTGRES_DB=baseapp\n' > .env
+          cat > .env <<'EOF'
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=postgres
+          POSTGRES_DB=baseapp
+          STRIPE_SECRET_KEY=sk_test_ci_only
+          STRIPE_WEBHOOK_SECRET=whsec_ci_only
+          EOF
 
       - name: docker compose build
         run: docker compose build --build-arg "PYTHON_VERSION=${{ matrix.python-version }}"
