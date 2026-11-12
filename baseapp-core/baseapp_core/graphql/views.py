@@ -55,8 +55,8 @@ class GraphQLView(GrapheneGraphQLView):
             and content_type == "multipart/form-data"
             and "operations" in request.POST
         ):
-            operations = json.loads(request.POST.get('operations', '{}'))
+            operations = json.loads(request.POST.get("operations", "{}"))
             # import pdb; pdb.set_trace()
-            files_map = json.loads(request.POST.get('map', '{}'))
+            files_map = json.loads(request.POST.get("map", "{}"))
             return place_files_in_operations(operations, files_map, request.FILES)
         return super(GraphQLView, self).parse_body(request)
