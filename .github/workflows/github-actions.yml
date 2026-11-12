@@ -58,7 +58,7 @@ jobs:
             fi
           fi
           git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' \
-            | xargs -0 -r docker compose exec backend black --check
+            | xargs -0 -r docker compose exec backend black --check --diff
 
       - name: Install tests requirements with Django ${{ matrix.django-version }}
         if: steps.black.outcome == 'success'
