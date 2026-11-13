@@ -47,8 +47,8 @@ jobs:
               base_sha="$(git rev-parse HEAD^)"
             fi
           fi
-          git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' \
-            | xargs -0 -r docker compose exec backend isort --check --diff --skip-glob 'channels_graphql_ws/*'
+          git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' ':(exclude)channels_graphql_ws/*.py' \
+            | xargs -0 -r docker compose exec backend isort --check --diff
 
       - name: black
         id: black
@@ -62,8 +62,8 @@ jobs:
               base_sha="$(git rev-parse HEAD^)"
             fi
           fi
-          git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' \
-            | xargs -0 -r docker compose exec backend black --check --diff --force-exclude '^channels_graphql_ws/'
+          git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' ':(exclude)channels_graphql_ws/*.py' \
+            | xargs -0 -r docker compose exec backend black --check --diff
 
       - name: Install tests requirements with Django ${{ matrix.django-version }}
         if: steps.black.outcome == 'success'
