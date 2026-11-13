@@ -1,4 +1,6 @@
 include README.md
+include channels_graphql_ws/LICENSE
+include channels_graphql_ws/VENDORING.md
 recursive-exclude testproject *
 
 include baseapp/README.md

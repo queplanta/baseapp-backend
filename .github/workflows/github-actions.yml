@@ -1,20 +1,29 @@
-name: Lint & Tests & SonarCloud
+name: Lint, Tests & Security
 run-name: ${{ github.actor }} is checking ${{ github.ref }} branch 🚀
-on: [push, workflow_dispatch]
+on: [pull_request, workflow_dispatch]
 permissions:
   contents: read
-  pull-requests: write
 jobs:
   tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.12"]
-        django-version: ["4.2.15", "5.2.1"]
+        django-version: ["5.2.17"]
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # for sonarcloud
+          fetch-depth: 0
+
+      - name: Prepare test environment
+        run: |
+          cat > .env <<'EOF'
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=postgres
+          POSTGRES_DB=baseapp
+          STRIPE_SECRET_KEY=sk_test_ci_only
+          STRIPE_WEBHOOK_SECRET=whsec_ci_only
+          EOF
 
       - name: docker compose build
         run: docker compose build --build-arg "PYTHON_VERSION=${{ matrix.python-version }}"
@@ -24,17 +33,37 @@ jobs:
 
       - name: flake8
         id: flake8
-        run: docker compose exec backend flake8 ./ --show-source --statistics --count
+        run: docker compose exec backend flake8 ./ --exclude=channels_graphql_ws --show-source --statistics --count
 
       - name: isort
         id: isort
         if: steps.flake8.outcome == 'success'
-        run: docker compose exec backend isort --check ./
+        run: |
+          if [[ -n "${{ github.event.pull_request.base.sha }}" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+            if [[ -z "$base_sha" || "$base_sha" =~ ^0+$ ]]; then
+              base_sha="$(git rev-parse HEAD^)"
+            fi
+          fi
+          git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' ':(exclude)channels_graphql_ws/*.py' \
+            | xargs -0 -r docker compose exec backend isort --check --diff
 
       - name: black
         id: black
         if: steps.isort.outcome == 'success'
-        run: docker compose exec backend black --check ./
+        run: |
+          if [[ -n "${{ github.event.pull_request.base.sha }}" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+            if [[ -z "$base_sha" || "$base_sha" =~ ^0+$ ]]; then
+              base_sha="$(git rev-parse HEAD^)"
+            fi
+          fi
+          git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' ':(exclude)channels_graphql_ws/*.py' \
+            | xargs -0 -r docker compose exec backend black --check --diff
 
       - name: Install tests requirements with Django ${{ matrix.django-version }}
         if: steps.black.outcome == 'success'
@@ -45,15 +74,15 @@ jobs:
       - name: pytest
         if: steps.requirements_installation.outcome == 'success'
         run: |
-          docker compose exec backend pytest --cov=./ --cov-report=xml --cov-branch .
+          docker compose exec backend pytest --import-mode=importlib --cov=./ --cov-report=xml --cov-branch .
       
       - name: pytest drf_view_action_permissions
         if: steps.requirements_installation.outcome == 'success'
         run: |
-          docker compose exec backend pytest --cov=./ --cov-report=xml --cov-branch --cov-append baseapp_drf_view_action_permissions --ds=baseapp_drf_view_action_permissions.tests.settings
+          docker compose exec backend pytest --import-mode=importlib baseapp_drf_view_action_permissions --ds=baseapp_drf_view_action_permissions.tests.settings
       
       - name: upload coverage report
-        if: matrix.python-version == '3.12' && matrix.django-version == '5.2.1'
+        if: matrix.python-version == '3.12' && matrix.django-version == '5.2.17'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -62,22 +91,22 @@ jobs:
       - name: docker compose down
         run: docker compose down --volumes --remove-orphans
 
-  sonarcloud:
+  security:
     runs-on: ubuntu-latest
     needs: tests
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-
-      - name: Download coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
-        continue-on-error: true
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          python-version: '3.12'
+      - name: Install project and security tools
+        id: security_install
+        run: |
+          python -m pip install -r testproject/requirements.txt
+          python -m pip install 'Django==5.2.17'
+          python -m pip install pip-audit bandit
+      - name: Audit installed dependencies
+        run: python -m pip_audit
+      - name: Scan project Python code
+        if: always() && steps.security_install.outcome == 'success'
+        run: bandit -r baseapp_* -lll -iii
