@@ -90,7 +90,6 @@ def render_to_pdf(*args, source: str | Path, **kwargs) -> typing.Generator[Path,
         "--headless",
         "--no-sandbox",
         "--run-all-compositor-stages-before-draw",
-        "--single-process",
         "--disable-gpu",
         "--disable-audio-output",
         "--disable-dev-shm-usage",
@@ -100,20 +99,19 @@ def render_to_pdf(*args, source: str | Path, **kwargs) -> typing.Generator[Path,
         source,
     ]
 
-    process = subprocess.run(
-        command,
-        capture_output=True,
-        check=True,
-    )
-    process.check_returncode()
-
     try:
-        ensure_valid_pdf(file_path=output_file_path)
+        subprocess.run(command, capture_output=True, check=True)
+        try:
+            ensure_valid_pdf(file_path=output_file_path)
+        except FileNotFoundError as exc:
+            raise BaseAppBackendPDFRenderToPDFException(
+                "Chrome did not create a PDF for the requested source"
+            ) from exc
         yield output_file_path
-    except BaseException as e:
-        raise e
+    except subprocess.CalledProcessError as exc:
+        raise BaseAppBackendPDFRenderToPDFException("Chrome failed to render the PDF") from exc
     finally:
-        output_file_path.unlink()
+        output_file_path.unlink(missing_ok=True)
         # Delete google-chrome generated tmp files
         for file_path in Path(tempfile.gettempdir()).glob("scoped_dir*"):
             if file_path.is_dir():
