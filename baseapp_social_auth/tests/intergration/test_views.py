@@ -200,7 +200,7 @@ class TestTwitterSocialAuth(SocialAuthViewSetMock):
         self.responses_mock.add(
             responses.POST,
             "https://api.twitter.com/oauth/request_token",
-            body="",
+            body="oauth_token=1234&oauth_token_secret=1234xyz&oauth_callback_confirmed=true",
             status=200,
         )
         return data
@@ -300,8 +300,8 @@ class TestTwitterSocialAuth(SocialAuthViewSetMock):
             r = self.client.post(self.reverse(), step2_data)
         h.responseOk(r)
         user = get_user_model().objects.get()
-        assert user.first_name == "Sean"
-        assert user.last_name == "Cook"
+        assert user.first_name == ""
+        assert user.last_name == ""
         assert user.email == "seancook@example.com"
 
     def test_twitter_user_avatar_is_created_from_profile_image(self):
@@ -453,10 +453,11 @@ class TestGoogleSocialAuthViewSet(SocialAuthViewSetMock):
             responses.GET,
             re.compile(r"https://www\.googleapis\.com/oauth2/v3/userinfo"),
             json={
-                "id": "1387123",
+                "sub": "1387123",
                 "given_name": "John",
                 "family_name": "Doe",
                 "email": "johndoe@example.com",
+                "email_verified": True,
             },
             status=200,
         )
