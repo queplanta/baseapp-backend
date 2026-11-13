@@ -1,6 +1,5 @@
 from django.db import migrations
 
-
 CREATE_VIEW = """
 CREATE VIEW v_activity_log AS
 SELECT
