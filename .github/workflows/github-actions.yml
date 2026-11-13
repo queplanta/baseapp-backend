@@ -33,7 +33,7 @@ jobs:
 
       - name: flake8
         id: flake8
-        run: docker compose exec backend flake8 ./ --show-source --statistics --count
+        run: docker compose exec backend flake8 ./ --exclude=channels_graphql_ws --show-source --statistics --count
 
       - name: isort
         id: isort
@@ -48,7 +48,7 @@ jobs:
             fi
           fi
           git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' \
-            | xargs -0 -r docker compose exec backend isort --check --diff
+            | xargs -0 -r docker compose exec backend isort --check --diff --skip-glob 'channels_graphql_ws/*'
 
       - name: black
         id: black
@@ -63,7 +63,7 @@ jobs:
             fi
           fi
           git diff --name-only -z "$base_sha" "$GITHUB_SHA" -- '*.py' \
-            | xargs -0 -r docker compose exec backend black --check --diff
+            | xargs -0 -r docker compose exec backend black --check --diff --force-exclude '^channels_graphql_ws/'
 
       - name: Install tests requirements with Django ${{ matrix.django-version }}
         if: steps.black.outcome == 'success'
