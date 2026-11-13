@@ -1,5 +1,5 @@
 # baseapp dependencies
-djangorestframework==3.16.1
+djangorestframework==3.18.2
 djangorestframework-simplejwt[crypto]==5.5.1
 drf-nested-routers==0.93.5
 easy_thumbnails==2.10.1
@@ -17,12 +17,12 @@ pytest-asyncio==0.21.1
 pytest-celery==1.2.0
 
 responses==0.25.3
-urllib3==2.6.0
+urllib3==2.8.0
 # test factories
 factory-boy==3.2.1
 
 # lint
-black==24.3.0
+black==26.10.1
 flake8==7.0.0
 isort==5.13.2
 

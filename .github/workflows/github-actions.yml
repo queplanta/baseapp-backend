@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.12"]
-        django-version: ["4.2.15", "5.2.1"]
+        django-version: ["4.2.15", "5.2.17"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -82,7 +82,7 @@ jobs:
           docker compose exec backend pytest --import-mode=importlib baseapp_drf_view_action_permissions --ds=baseapp_drf_view_action_permissions.tests.settings
       
       - name: upload coverage report
-        if: matrix.python-version == '3.12' && matrix.django-version == '5.2.1'
+        if: matrix.python-version == '3.12' && matrix.django-version == '5.2.17'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -103,6 +103,7 @@ jobs:
         id: security_install
         run: |
           python -m pip install -r testproject/requirements.txt
+          python -m pip install 'Django==5.2.17'
           python -m pip install pip-audit bandit
       - name: Audit installed dependencies
         run: python -m pip_audit
