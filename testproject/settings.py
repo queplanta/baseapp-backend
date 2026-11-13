@@ -9,6 +9,7 @@ from celery.schedules import crontab
 from django.utils.translation import gettext_lazy as _
 
 from baseapp_core.tests.settings import *  # noqa
+
 # isort: on
 
 # Application definition
