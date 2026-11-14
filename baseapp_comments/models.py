@@ -82,6 +82,12 @@ if apps.is_installed("baseapp_profiles"):
     comment_inheritances.append(ProfileMixin)
 
 
+if apps.is_installed("baseapp.files"):
+    from baseapp.files.base import FileableModel
+
+    comment_inheritances.append(FileableModel)
+
+
 class AbstractComment(
     *comment_inheritances,
     DocumentIdTargetMixin,
@@ -107,7 +113,7 @@ class AbstractComment(
         max_length=10,
         null=True,
         blank=True,
-        help_text=_("languaged used in the comment"),
+        help_text=_("language used in the comment"),
     )
 
     is_edited = models.BooleanField(default=False, verbose_name=_("is edited"))
