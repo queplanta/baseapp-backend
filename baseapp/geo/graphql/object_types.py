@@ -10,9 +10,8 @@ from query_optimizer.optimizer import QueryOptimizer
 from query_optimizer.typing import TModel
 
 from baseapp_auth.graphql import PermissionsInterface
-from baseapp_core.graphql import DjangoObjectType
+from baseapp_core.graphql import DjangoObjectType, skip_ast_walker
 from baseapp_core.graphql import Node as RelayNode
-from baseapp_core.graphql import skip_ast_walker
 from baseapp_core.graphql.utils import resolve_document_content_object
 
 from .filters import GeoJSONFeatureFilter
