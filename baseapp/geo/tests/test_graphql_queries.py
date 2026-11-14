@@ -211,7 +211,9 @@ class TestGeoFeaturesConnection:
         content = response.json()
 
         assert content["data"]["geoFeatures"] is None
-        assert "exceeds the `first` limit of 100" in content["errors"][0]["message"]
+        # Message text comes from query_optimizer's DjangoConnectionField; the cap itself
+        # (100) is what this asserts, not the wording.
+        assert "exceeds the limit of 100" in content["errors"][0]["message"]
 
         # Explicit null: graphql_query's mutable `extra={}` default leaks the previous
         # call's variables, so omitting them here would silently resend first=200.
@@ -506,6 +508,34 @@ class TestTargetObjectIdFilter:
 
         assert content["errors"]
         assert content["data"]["geoFeatures"] is None
+
+
+class TestLegacyRelayIdTargets:
+    def test_legacy_id_for_a_missing_row_is_a_validation_error(self):
+        """The public-id branch rejects an unknown target; the base64 branch has to agree,
+        or a well-formed ID for a deleted row silently returns an empty list."""
+        user = UserFactory()
+        missing_pk = user.pk + 10_000
+        legacy_id = to_global_id("User", missing_pk)
+
+        filterset = GeoJSONFeatureFilter(
+            data={"target_object_id": legacy_id}, queryset=GeoJSONFeature.objects.all()
+        )
+
+        with pytest.raises(ValidationError):
+            filterset.qs
+
+    def test_legacy_id_for_an_existing_row_still_resolves(self):
+        user = UserFactory()
+        match = GeoJSONFeatureFactory(target=user)
+        GeoJSONFeatureFactory()
+
+        filterset = GeoJSONFeatureFilter(
+            data={"target_object_id": to_global_id("User", user.pk)},
+            queryset=GeoJSONFeature.objects.all(),
+        )
+
+        assert list(filterset.qs) == [match]
 
 
 class TestFilterSetDRFReusability:

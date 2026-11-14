@@ -1,3 +1,4 @@
+import json
 import logging
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -6,7 +7,7 @@ import pghistory
 from django.http.response import HttpResponseBadRequest
 from graphene_django.views import GraphQLView as GrapheneGraphQLView
 from graphene_django.views import HttpError
-from graphql import get_operation_ast, parse
+from graphql import GraphQLError, get_operation_ast, parse
 from graphql.execution import ExecutionResult
 
 try:
@@ -42,6 +43,11 @@ class GraphQLView(GrapheneGraphQLView):
 
         try:
             document = parse(query)
+        except GraphQLError as e:
+            # A query that fails to parse is a client mistake (a typo, a hand-written probe),
+            # not a server fault: answer with the syntax error, as upstream graphene-django
+            # does, without logging it at ERROR level and turning it into a Sentry event.
+            return ExecutionResult(errors=[e])
         except Exception as e:
             logging.exception(e)
             return ExecutionResult(errors=[e])
@@ -61,3 +67,14 @@ class GraphQLView(GrapheneGraphQLView):
                 return super().execute_graphql_request(
                     request, data, query, variables, operation_name, show_graphiql
                 )
+
+    def parse_body(self, request):
+        """Handle multipart request spec for multipart/form-data"""
+        content_type = self.get_content_type(request)
+        if content_type == "multipart/form-data" and "operations" in request.POST:
+            operations = json.loads(request.POST.get("operations", "{}"))
+            files_map = json.loads(request.POST.get("map", "{}"))
+            from graphene_file_upload.utils import place_files_in_operations
+
+            return place_files_in_operations(operations, files_map, request.FILES)
+        return super(GraphQLView, self).parse_body(request)

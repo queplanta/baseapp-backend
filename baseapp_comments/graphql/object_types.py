@@ -10,13 +10,11 @@ from baseapp_core.graphql import (
     ConnectionFieldNodeExtractor,
     DjangoObjectType,
     NestedConnectionInfoProxy,
-)
-from baseapp_core.graphql import Node as RelayNode
-from baseapp_core.graphql import (
     get_object_type_for_model,
     resolve_document_content_object,
     skip_ast_walker,
 )
+from baseapp_core.graphql import Node as RelayNode
 from baseapp_core.graphql.optimizer import NESTED_INFO_PROXY_HINT
 from baseapp_core.plugins import (
     apply_if_installed,
@@ -121,6 +119,7 @@ class BaseCommentObjectType:
             "ReactionsInterface",
             "MentionsInterface",
             "NodeActivityLogInterface",
+            "FilesInterface",
         )
         model = Comment
         fields = (
@@ -178,6 +177,10 @@ class BaseCommentObjectType:
 
         # Annotate reactable metadata (includes reactions_count_total for CommentFilter).
         if service := shared_services.get("reactable_metadata"):
+            queryset = service.annotate_queryset(queryset)
+
+        # Annotate files metadata so FilesInterface resolvers don't N+1.
+        if service := shared_services.get("files_metadata"):
             queryset = service.annotate_queryset(queryset)
 
         return queryset
