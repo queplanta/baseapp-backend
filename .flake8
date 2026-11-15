@@ -5,3 +5,5 @@ select = B,C,E,F,W,T4,B9
 exclude =
     __pycache__
     venv
+    # Vendored third-party source, kept byte-identical to the 1.0.0rc9 wheel.
+    channels_graphql_ws
