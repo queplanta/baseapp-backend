@@ -1,16 +1,13 @@
-# isort: off
+from celery.schedules import crontab
+from django.utils.translation import gettext_lazy as _
+
+from baseapp_core.tests.settings import *  # noqa
 from baseapp_wagtail.settings import *  # noqa
 from baseapp_wagtail.settings import (
     WAGTAIL_INSTALLED_APPS,
     WAGTAIL_INSTALLED_INTERNAL_APPS,
     WAGTAIL_MIDDLEWARE,
 )
-from celery.schedules import crontab
-from django.utils.translation import gettext_lazy as _
-
-from baseapp_core.tests.settings import *  # noqa
-
-# isort: on
 
 # Application definition
 INSTALLED_APPS += [
@@ -72,11 +69,6 @@ ROOT_URLCONF = "testproject.urls"
 
 # Auth
 AUTH_USER_MODEL = "users.User"
-
-# The reusable pages app ships an English-only migration, while this test
-# project enables three languages. Keep the additional fields in a test-only
-# migration module so the reusable app's migration stays language agnostic.
-MIGRATION_MODULES = {"baseapp_pages": "testproject.pages_migrations"}
 
 LANGUAGE_CODE = "en"
 LANGUAGES = [("en", _("English")), ("es", _("Spanish")), ("pt", _("Portuguese"))]
@@ -187,10 +179,6 @@ BASEAPP_REACTIONS_ENABLE_NOTIFICATIONS = False
 # API Key
 BA_API_KEY_REQUEST_HEADER = env("BA_API_KEY_REQUEST_HEADER", default="HTTP_API_KEY")
 BA_API_KEY_ENCRYPTION_KEY = env("BA_API_KEY_ENCRYPTION_KEY", default=None)
-if BA_API_KEY_ENCRYPTION_KEY is None:
-    BA_API_KEY_ENCRYPTION_KEY = (
-        "jCe8USiQJDatFT5T0WCIl86QBxYs0-Q7iDJQc77Dh7LR1VAnWW3PA9UyXK-V7LhFnKq9sLd3xDw5FTrrYYtj2Q=="
-    )
 
 # Graphene query optimizer
 GRAPHQL_QUERY_OPTIMIZER = {

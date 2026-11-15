@@ -1,7 +1,5 @@
 from graphene.relay import Node as GrapheneRelayNode
 
-from .object_types import DjangoObjectType
-
 
 class Node(GrapheneRelayNode):
     @classmethod
@@ -35,15 +33,9 @@ class Node(GrapheneRelayNode):
 
         # Ignore Graphene's inherited unrestricted get_node implementation.
         # A type must explicitly define its own method to bypass queryset policy.
-        custom_bases = graphene_type.__mro__
-        if DjangoObjectType in custom_bases:
-            custom_bases = custom_bases[: custom_bases.index(DjangoObjectType)]
-        get_node = next(
-            (base.__dict__["get_node"] for base in custom_bases if "get_node" in base.__dict__),
-            None,
-        )
+        get_node = graphene_type.__dict__.get("get_node")
         if get_node:
-            return get_node.__get__(None, graphene_type)(info, _id)
+            return get_node(info, _id)
 
         # DjangoObjectTypes may expose an authorization-aware queryset without
         # implementing a custom get_node method. This keeps Relay node lookup
