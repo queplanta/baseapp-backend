@@ -9,6 +9,12 @@ tag_regex = "^baseapp@v(?P<version>[vV]?\\d+(?:\\.\\d+){0,2}[^\\+]*)(?:\\+.*)?$"
 [tool.black]
 line-length = 100
 target_version = ['py38']
+# Vendored third-party source, kept byte-identical to the 1.0.0rc9 wheel.
+extend-exclude = '^/channels_graphql_ws/'
 
 [tool.isort]
 profile = "black"
+# Vendored source is not reformatted, and its imports stay classified as
+# third-party (as when it was installed from PyPI).
+extend_skip = ["channels_graphql_ws"]
+known_third_party = ["channels_graphql_ws"]
